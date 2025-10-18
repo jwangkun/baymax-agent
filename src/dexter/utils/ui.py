@@ -73,11 +73,30 @@ def show_progress(message: str, success_message: str = ""):
             spinner = Spinner(message, color=Colors.CYAN)
             spinner.start()
             try:
-                result = func(*args, **kwargs)
-                spinner.stop(success_message or message.replace("...", " ✓"), symbol="✓", symbol_color=Colors.GREEN)
-                return result
+                # 添加超时保护
+                import signal
+                
+                def timeout_handler(signum, frame):
+                    raise TimeoutError(f"{message} 操作超时")
+                
+                # 设置45秒超时
+                old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(45)
+                
+                try:
+                    result = func(*args, **kwargs)
+                    signal.alarm(0)  # 取消超时
+                    spinner.stop(success_message or message.replace("...", " ✓"), symbol="✓", symbol_color=Colors.GREEN)
+                    return result
+                except TimeoutError as te:
+                    signal.alarm(0)  # 取消超时
+                    spinner.stop(f"超时: {str(te)}", symbol="⏱", symbol_color=Colors.YELLOW)
+                    raise
+                finally:
+                    signal.signal(signal.SIGALRM, old_handler)
+                    
             except Exception as e:
-                spinner.stop(f"Failed: {str(e)}", symbol="✗", symbol_color=Colors.RED)
+                spinner.stop(f"失败: {str(e)}", symbol="✗", symbol_color=Colors.RED)
                 raise
         return wrapper
     return decorator

@@ -2,7 +2,7 @@
 
 const { spawn } = require('child_process');
 
-const child = spawn('dexter-agent', process.argv.slice(2), {
+const child = spawn('baymax', process.argv.slice(2), {
     stdio: 'inherit',
     shell: true
 });

@@ -35,10 +35,19 @@ class Agent:
         try:
             response = call_llm(prompt, system_prompt=system_prompt, output_schema=TaskList)
             tasks = response.tasks
+        except TimeoutError as te:
+            self.logger._log(f"Planning timed out: {te}")
+            # 当超时时，创建一个简单的默认任务
+            tasks = [Task(id=1, description=f"分析查询: {query}", done=False)]
         except Exception as e:
             self.logger._log(f"Planning failed: {e}")
+            # 当规划失败时，创建一个默认任务来处理原始查询
             tasks = [Task(id=1, description=query, done=False)]
         
+        # 确保tasks不为空
+        if not tasks:
+            tasks = [Task(id=1, description=query, done=False)]
+            
         task_dicts = [task.dict() for task in tasks]
         self.logger.log_task_list(task_dicts)
         return tasks
@@ -55,6 +64,9 @@ class Agent:
         """
         try:
             return call_llm(prompt, system_prompt=ACTION_SYSTEM_PROMPT, tools=TOOLS)
+        except TimeoutError as te:
+            self.logger._log(f"ask_for_actions timed out: {te}")
+            return AIMessage(content="Failed to get actions due to timeout.")
         except Exception as e:
             self.logger._log(f"ask_for_actions failed: {e}")
             return AIMessage(content="Failed to get actions.")
@@ -71,6 +83,9 @@ class Agent:
         try:
             resp = call_llm(prompt, system_prompt=VALIDATION_SYSTEM_PROMPT, output_schema=IsDone)
             return resp.done
+        except TimeoutError:
+            # 超时情况下，简单检查是否有结果
+            return len(recent_results.strip()) > 0
         except:
             return False
 
@@ -102,6 +117,9 @@ class Agent:
             if isinstance(response, dict):
                 return response if response else initial_args
             return response.arguments
+        except TimeoutError as te:
+            self.logger._log(f"Argument optimization timed out: {te}, using original args")
+            return initial_args
         except Exception as e:
             self.logger._log(f"Argument optimization failed: {e}, using original args")
             return initial_args
@@ -248,5 +266,12 @@ class Agent:
         Based on the data above, provide a comprehensive answer to the user's query.
         Include specific numbers, calculations, and insights.
         """
-        answer_obj = call_llm(answer_prompt, system_prompt=ANSWER_SYSTEM_PROMPT, output_schema=Answer)
-        return answer_obj.answer
+        try:
+            answer_obj = call_llm(answer_prompt, system_prompt=ANSWER_SYSTEM_PROMPT, output_schema=Answer)
+            return answer_obj.answer
+        except TimeoutError as te:
+            self.logger._log(f"Answer generation timed out: {te}")
+            return f"抱歉，生成回答时超时。根据收集到的信息：\n\n{all_results[:500]}..."
+        except Exception as e:
+            self.logger._log(f"Answer generation failed: {e}")
+            return f"抱歉，生成回答时出错。根据收集到的信息：\n\n{all_results[:500]}..."

@@ -3,10 +3,10 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dexter"
+name = "baymax-stock-agent"
 version = "0.1.0"
-description = "AI agent for financial analysis."
-authors = []
+description = "BayMax Stock Agent - An AI-powered financial research agent for stock analysis and investment research."
+authors = [{name = "BayMax Stock Agent Team", email = "contact@baymax-stock-agent.com"}]
 requires-python = ">=3.10"
 dependencies = [
     "langchain>=0.3.27",
@@ -16,10 +16,14 @@ dependencies = [
     "pydantic>=2.11.10",
     "python-dotenv>=1.1.1",
     "requests>=2.32.5",
+    "akshare>=1.12.0",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "httpx[socks]>=0.28.1",
 ]
 
 [project.scripts]
-dexter-agent = "dexter.cli:main"
+baymax = "dexter.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
