@@ -2,18 +2,18 @@ from typing import List
 
 from langchain_core.messages import AIMessage
 
-from dexter.model import call_llm
-from dexter.prompts import (
+from baymax.model import call_llm
+from baymax.prompts import (
     ACTION_SYSTEM_PROMPT,
     ANSWER_SYSTEM_PROMPT,
     PLANNING_SYSTEM_PROMPT,
     TOOL_ARGS_SYSTEM_PROMPT,
     VALIDATION_SYSTEM_PROMPT,
 )
-from dexter.schemas import Answer, IsDone, OptimizedToolArgs, Task, TaskList
-from dexter.tools import TOOLS
-from dexter.utils.logger import Logger
-from dexter.utils.ui import show_progress
+from baymax.schemas import Answer, IsDone, OptimizedToolArgs, Task, TaskList
+from baymax.tools import TOOLS
+from baymax.utils.logger import Logger
+from baymax.utils.ui import show_progress
 
 
 class Agent:

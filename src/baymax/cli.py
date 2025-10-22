@@ -1,10 +1,10 @@
 from dotenv import load_dotenv
 
-# Load environment variables BEFORE importing any dexter modules
+# Load environment variables BEFORE importing any baymax modules
 load_dotenv()
 
-from dexter.agent import Agent
-from dexter.utils.intro import print_intro
+from baymax.agent import Agent
+from baymax.utils.intro import print_intro
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 

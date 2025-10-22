@@ -17,7 +17,7 @@ class Colors:
     BOLD = "\033[1m"
     DIM = "\033[2m"
     WHITE = "\033[97m"
-    LIGHT_BLUE = "\033[94m"  # Same as DEXTER ASCII art
+    LIGHT_BLUE = "\033[94m"  # Same as BAYMAX ASCII art
 
 
 class Spinner:
@@ -157,23 +157,26 @@ class UI:
         print(f"  {Colors.YELLOW}⚡{Colors.ENDC} {tool_name}{args_display}")
     
     def print_answer(self, answer: str):
-        """Print the final answer in a beautiful box."""
+        """Print the final answer as a Markdown report."""
         width = 80
         
         # Top border
         print(f"\n{Colors.BOLD}{Colors.BLUE}╔{'═' * (width - 2)}╗{Colors.ENDC}")
         
         # Title
-        title = "ANSWER"
+        title = "ANALYSIS REPORT"
         padding = (width - len(title) - 2) // 2
         print(f"{Colors.BOLD}{Colors.BLUE}║{' ' * padding}{title}{' ' * (width - len(title) - padding - 2)}║{Colors.ENDC}")
         
         # Separator
         print(f"{Colors.BLUE}╠{'═' * (width - 2)}╣{Colors.ENDC}")
         
+        # Convert answer to Markdown format
+        markdown_answer = self._format_as_markdown(answer)
+        
         # Answer content with proper line wrapping
         print(f"{Colors.BLUE}║{Colors.ENDC}{' ' * (width - 2)}{Colors.BLUE}║{Colors.ENDC}")
-        for line in answer.split('\n'):
+        for line in markdown_answer.split('\n'):
             if len(line) == 0:
                 print(f"{Colors.BLUE}║{Colors.ENDC}{' ' * (width - 2)}{Colors.BLUE}║{Colors.ENDC}")
             else:
@@ -194,6 +197,153 @@ class UI:
         
         # Bottom border
         print(f"{Colors.BOLD}{Colors.BLUE}╚{'═' * (width - 2)}╝{Colors.ENDC}\n")
+        
+        # Also print the raw markdown for easy copying
+        print(f"{Colors.DIM}--- Markdown Report ---{Colors.ENDC}")
+        print(f"{Colors.DIM}{markdown_answer}{Colors.ENDC}")
+        print(f"{Colors.DIM}-----------------------{Colors.ENDC}\n")
+    
+    def _format_as_markdown(self, text: str) -> str:
+        """Convert plain text to Markdown format with proper structure."""
+        lines = text.split('\n')
+        markdown_lines = []
+        
+        # Add a title with timestamp
+        import datetime
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        markdown_lines.append("# 📊 股票分析报告")
+        markdown_lines.append(f"*生成时间: {current_time}*")
+        markdown_lines.append("")
+        
+        current_section = None
+        in_list = False
+        in_table = False
+        paragraph_lines = []
+        
+        for line in lines:
+            stripped = line.strip()
+            
+            # Skip empty lines
+            if not stripped:
+                if in_list:
+                    markdown_lines.append("")  # End list
+                    in_list = False
+                elif paragraph_lines:
+                    # End of paragraph
+                    markdown_lines.append(" ".join(paragraph_lines))
+                    markdown_lines.append("")
+                    paragraph_lines = []
+                continue
+            
+            # Check if this is a section header
+            if any(keyword in stripped.lower() for keyword in ['结论', '总结', '建议', '分析', '风险', '机会', '数据', '表现', '趋势', '预测']):
+                if in_list:
+                    markdown_lines.append("")  # End list
+                    in_list = False
+                elif paragraph_lines:
+                    # End of paragraph
+                    markdown_lines.append(" ".join(paragraph_lines))
+                    markdown_lines.append("")
+                    paragraph_lines = []
+                
+                # Format as a section header with emoji
+                section = stripped
+                emoji_map = {
+                    '结论': '📌',
+                    '总结': '📝',
+                    '建议': '💡',
+                    '分析': '🔍',
+                    '风险': '⚠️',
+                    '机会': '🚀',
+                    '数据': '📈',
+                    '表现': '📊',
+                    '趋势': '📉',
+                    '预测': '🔮'
+                }
+                
+                # Find matching emoji
+                emoji = ''
+                for key, val in emoji_map.items():
+                    if key in section:
+                        emoji = val
+                        break
+                
+                markdown_lines.append(f"## {emoji} {section}")
+                markdown_lines.append("")
+                current_section = section
+                continue
+            
+            # Check if this looks like a list item
+            if stripped.startswith(('•', '-', '*', '1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.')):
+                if paragraph_lines:
+                    # End of paragraph
+                    markdown_lines.append(" ".join(paragraph_lines))
+                    markdown_lines.append("")
+                    paragraph_lines = []
+                
+                if not in_list:
+                    markdown_lines.append("")  # Start list
+                    in_list = True
+                
+                # Format as a list item
+                if stripped[0].isdigit():
+                    # Numbered list
+                    markdown_lines.append(f"{stripped}")
+                else:
+                    # Bullet list with emoji if appropriate
+                    content = stripped[1:].strip()
+                    if '建议' in content or '推荐' in content:
+                        markdown_lines.append(f"- 💡 {content}")
+                    elif '风险' in content or '注意' in content:
+                        markdown_lines.append(f"- ⚠️ {content}")
+                    elif '机会' in content or '利好' in content:
+                        markdown_lines.append(f"- 🚀 {content}")
+                    else:
+                        markdown_lines.append(f"- {content}")
+                continue
+            
+            # Check if this looks like data (contains numbers and %)
+            if any(char.isdigit() for char in stripped) and ('%' in stripped or '元' in stripped or '亿' in stripped):
+                if paragraph_lines:
+                    # End of paragraph
+                    markdown_lines.append(" ".join(paragraph_lines))
+                    markdown_lines.append("")
+                    paragraph_lines = []
+                
+                if in_list:
+                    markdown_lines.append("")  # End list
+                    in_list = False
+                
+                # Format as data point with emoji
+                if '%' in stripped:
+                    markdown_lines.append(f"📊 **{stripped}**")
+                elif '元' in stripped:
+                    markdown_lines.append(f"💰 **{stripped}**")
+                elif '亿' in stripped:
+                    markdown_lines.append(f"📈 **{stripped}**")
+                else:
+                    markdown_lines.append(f"📋 **{stripped}**")
+                continue
+            
+            # Regular paragraph - collect lines
+            if in_list:
+                markdown_lines.append("")  # End list
+                in_list = False
+            
+            paragraph_lines.append(stripped)
+        
+        # Handle any remaining paragraph
+        if paragraph_lines:
+            markdown_lines.append(" ".join(paragraph_lines))
+            markdown_lines.append("")
+        
+        # Add a footer with more information
+        markdown_lines.append("---")
+        markdown_lines.append("*🤖 此报告由 BayMax Agent 自动生成*")
+        markdown_lines.append("*📡 数据来源: 公开市场信息*")
+        markdown_lines.append("*⚠️ 投资有风险，入市需谨慎*")
+        
+        return '\n'.join(markdown_lines)
     
     def print_info(self, message: str):
         """Print an info message."""
