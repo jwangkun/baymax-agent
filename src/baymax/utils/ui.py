@@ -158,50 +158,9 @@ class UI:
     
     def print_answer(self, answer: str):
         """Print the final answer as a Markdown report."""
-        width = 80
-        
-        # Top border
-        print(f"\n{Colors.BOLD}{Colors.BLUE}╔{'═' * (width - 2)}╗{Colors.ENDC}")
-        
-        # Title
-        title = "ANALYSIS REPORT"
-        padding = (width - len(title) - 2) // 2
-        print(f"{Colors.BOLD}{Colors.BLUE}║{' ' * padding}{title}{' ' * (width - len(title) - padding - 2)}║{Colors.ENDC}")
-        
-        # Separator
-        print(f"{Colors.BLUE}╠{'═' * (width - 2)}╣{Colors.ENDC}")
-        
-        # Convert answer to Markdown format
+        # Convert answer to Markdown format and print directly
         markdown_answer = self._format_as_markdown(answer)
-        
-        # Answer content with proper line wrapping
-        print(f"{Colors.BLUE}║{Colors.ENDC}{' ' * (width - 2)}{Colors.BLUE}║{Colors.ENDC}")
-        for line in markdown_answer.split('\n'):
-            if len(line) == 0:
-                print(f"{Colors.BLUE}║{Colors.ENDC}{' ' * (width - 2)}{Colors.BLUE}║{Colors.ENDC}")
-            else:
-                # Word wrap long lines
-                words = line.split()
-                current_line = ""
-                for word in words:
-                    if len(current_line) + len(word) + 1 <= width - 6:
-                        current_line += word + " "
-                    else:
-                        if current_line:
-                            print(f"{Colors.BLUE}║{Colors.ENDC} {current_line.ljust(width - 4)} {Colors.BLUE}║{Colors.ENDC}")
-                        current_line = word + " "
-                if current_line:
-                    print(f"{Colors.BLUE}║{Colors.ENDC} {current_line.ljust(width - 4)} {Colors.BLUE}║{Colors.ENDC}")
-        
-        print(f"{Colors.BLUE}║{Colors.ENDC}{' ' * (width - 2)}{Colors.BLUE}║{Colors.ENDC}")
-        
-        # Bottom border
-        print(f"{Colors.BOLD}{Colors.BLUE}╚{'═' * (width - 2)}╝{Colors.ENDC}\n")
-        
-        # Also print the raw markdown for easy copying
-        print(f"{Colors.DIM}--- Markdown Report ---{Colors.ENDC}")
-        print(f"{Colors.DIM}{markdown_answer}{Colors.ENDC}")
-        print(f"{Colors.DIM}-----------------------{Colors.ENDC}\n")
+        print(markdown_answer)
     
     def _format_as_markdown(self, text: str) -> str:
         """Convert plain text to Markdown format with proper structure."""

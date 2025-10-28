@@ -29,3 +29,11 @@ baymax = "baymax.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.uv.sources]
+baymax = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "baymax",
+]

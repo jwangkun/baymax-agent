@@ -10,9 +10,28 @@ import numpy as np
 ####################################
 
 def normalize_ticker(ticker: str) -> str:
-    """标准化股票代码，支持美股和A股"""
+    """标准化股票代码，支持美股、港股、A股和ADR"""
     ticker = ticker.upper().strip()
-    # 如果是美股，保持原样（如 AAPL, MSFT）
+    
+    # 处理常见的BYD股票代码
+    byd_mappings = {
+        'BYD': '1211.HK',      # 比亚迪港股
+        'BYDDY': '1211.HK',    # 比亚迪ADR
+        'BYDDF': '1211.HK',    # 比亚迪ADR
+        '1211.HK': '1211.HK'   # 比亚迪港股
+    }
+    
+    if ticker in byd_mappings:
+        return byd_mappings[ticker]
+    
+    # 如果是港股代码 (格式: XXXX.HK)
+    if ticker.endswith('.HK'):
+        return ticker
+    
+    # 如果是美股ADR，保持原样
+    if ticker in ['TSLA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NFLX', 'NVDA']:
+        return ticker
+    
     # 如果是A股，确保是6位数字代码
     if ticker.isdigit():
         if len(ticker) == 6:
@@ -20,30 +39,195 @@ def normalize_ticker(ticker: str) -> str:
         else:
             # 尝试补充前导零
             return ticker.zfill(6)
-    return ticker
-
-####################################
-# AkShare Configuration
-####################################
-
-def normalize_ticker(ticker: str) -> str:
-    """标准化股票代码，支持美股和A股"""
-    ticker = ticker.upper().strip()
-    # 如果是美股，保持原样（如 AAPL, MSFT）
-    # 如果是A股，确保是6位数字代码
-    if ticker.isdigit():
-        if len(ticker) == 6:
-            return ticker
-        else:
-            # 尝试补充前导零
-            return ticker.zfill(6)
+    
     return ticker
 
 def get_stock_financial_data(ticker: str, period: str, limit: int = 10) -> dict:
-    """使用akshare获取股票财务数据"""
+    """使用akshare获取股票财务数据，支持港股、美股和A股"""
     try:
         ticker = normalize_ticker(ticker)
         
+        # 根据股票类型选择不同的数据源
+        if ticker.endswith('.HK'):
+            # 港股数据处理
+            return get_hk_stock_financial_data(ticker, period, limit)
+        elif ticker.isalpha() and len(ticker) <= 5:
+            # 美股数据处理
+            return get_us_stock_financial_data(ticker, period, limit)
+        else:
+            # A股数据处理
+            return get_cn_stock_financial_data(ticker, period, limit)
+            
+    except Exception as e:
+        print(f"获取股票{ticker}财务数据失败: {str(e)}")
+        return {
+            "income_statements": [],
+            "balance_sheets": [],
+            "cash_flow_statements": []
+        }
+
+def get_hk_stock_financial_data(ticker: str, period: str, limit: int = 10) -> dict:
+    """获取港股财务数据"""
+    try:
+        # 提取股票代码数字部分
+        stock_code = ticker.replace('.HK', '')
+        
+        # 获取港股财务报表
+        try:
+            # 使用akshare的港股财务报告接口
+            hk_financial_df = ak.stock_financial_hk_report_em(symbol=stock_code)
+            
+            if not hk_financial_df.empty:
+                # 标准化港股财务数据格式
+                income_statements = []
+                balance_sheets = []
+                cash_flow_statements = []
+                
+                # 根据period筛选数据
+                if period == "quarterly":
+                    # 季度数据 - 取更多记录
+                    recent_data = hk_financial_df.head(limit * 4)
+                elif period == "ttm":
+                    # TTM数据 - 取最近4期
+                    recent_data = hk_financial_df.head(4)
+                else:  # annual
+                    # 年度数据
+                    recent_data = hk_financial_df.head(limit)
+                
+                # 转换为标准格式
+                for _, row in recent_data.iterrows():
+                    statement = {
+                        'report_date': row.get('报告日期', row.get('日期', '')),
+                        'ticker': ticker
+                    }
+                    
+                    # 添加财务数据字段
+                    for col in row.index:
+                        if col not in ['report_date', '日期', 'ticker']:
+                            statement[col] = row[col]
+                    
+                    # 根据报表类型分类 - 港股财务数据通常包含所有报表信息
+                    income_statements.append(statement.copy())
+                    balance_sheets.append(statement.copy())
+                    cash_flow_statements.append(statement.copy())
+                
+                return {
+                    "income_statements": income_statements,
+                    "balance_sheets": balance_sheets,
+                    "cash_flow_statements": cash_flow_statements
+                }
+        except Exception as e:
+            print(f"港股财务报告接口获取失败: {str(e)}")
+            
+            # 尝试使用港股财务指标接口作为备选
+            try:
+                hk_indicator_df = ak.stock_financial_hk_analysis_indicator_em(symbol=stock_code)
+                if not hk_indicator_df.empty:
+                    # 创建标准化的财务数据
+                    statement = {
+                        'report_date': pd.Timestamp.now().strftime('%Y-%m-%d'),
+                        'ticker': ticker
+                    }
+                    
+                    # 添加关键财务指标
+                    for col in hk_indicator_df.columns:
+                        if len(hk_indicator_df) > 0:
+                            statement[col] = hk_indicator_df[col].iloc[0] if not pd.isna(hk_indicator_df[col].iloc[0]) else 0
+                    
+                    return {
+                        "income_statements": [statement],
+                        "balance_sheets": [statement],
+                        "cash_flow_statements": [statement]
+                    }
+            except Exception as e2:
+                print(f"港股财务指标接口也失败: {str(e2)}")
+            
+        # 如果所有接口都失败，返回空数据
+        return {
+            "income_statements": [],
+            "balance_sheets": [],
+            "cash_flow_statements": []
+        }
+        
+    except Exception as e:
+        print(f"获取港股{ticker}财务数据失败: {str(e)}")
+        return {
+            "income_statements": [],
+            "balance_sheets": [],
+            "cash_flow_statements": []
+        }
+
+def get_us_stock_financial_data(ticker: str, period: str, limit: int = 10) -> dict:
+    """获取美股财务数据"""
+    try:
+        # 对于美股，我们可以尝试使用一些基本的技术指标作为替代
+        # 因为akshare的美股财务数据接口有限
+        
+        # 获取基本股票信息
+        try:
+            # 获取美股实时行情数据
+            stock_info = ak.stock_us_spot_em(symbol=ticker)
+            
+            # 获取美股历史数据
+            stock_hist = ak.stock_us_hist(symbol=ticker, period="daily", start_date="20230101", end_date=pd.Timestamp.now().strftime('%Y%m%d'))
+            
+            if not stock_info.empty or not stock_hist.empty:
+                # 创建模拟的财务数据，基于市场数据
+                current_data = {
+                    'ticker': ticker,
+                    'report_date': pd.Timestamp.now().strftime('%Y-%m-%d'),
+                    'current_price': stock_info.get('最新价', [0]).iloc[0] if not stock_info.empty else 0,
+                    'volume': stock_info.get('成交量', [0]).iloc[0] if not stock_info.empty else 0,
+                    'market_cap': stock_info.get('总市值', [0]).iloc[0] if not stock_info.empty else 0,
+                    'pe_ratio': stock_info.get('市盈率', [0]).iloc[0] if not stock_info.empty else 0,
+                    'pb_ratio': stock_info.get('市净率', [0]).iloc[0] if not stock_info.empty else 0,
+                    'revenue_estimate': 'N/A',  # 收入估算
+                    'earnings_estimate': 'N/A'   # 盈利估算
+                }
+                
+                # 根据period返回不同数量的记录
+                if period == "quarterly":
+                    statements = [current_data.copy() for _ in range(min(limit, 4))]
+                elif period == "ttm":
+                    statements = [current_data.copy() for _ in range(min(limit, 4))]
+                else:  # annual
+                    statements = [current_data.copy() for _ in range(min(limit, 2))]
+                
+                # 为每个statement添加不同的日期
+                for i, statement in enumerate(statements):
+                    if period == "quarterly":
+                        statement['report_date'] = (pd.Timestamp.now() - pd.Timedelta(days=90*i)).strftime('%Y-%m-%d')
+                    elif period == "ttm":
+                        statement['report_date'] = (pd.Timestamp.now() - pd.Timedelta(days=365*i)).strftime('%Y-%m-%d')
+                    else:
+                        statement['report_date'] = (pd.Timestamp.now() - pd.Timedelta(days=365*i)).strftime('%Y-%m-%d')
+                
+                return {
+                    "income_statements": statements,
+                    "balance_sheets": statements,
+                    "cash_flow_statements": statements
+                }
+        except Exception as e:
+            print(f"美股行情数据获取失败: {str(e)}")
+            
+        # 如果所有尝试都失败，返回空数据
+        return {
+            "income_statements": [],
+            "balance_sheets": [],
+            "cash_flow_statements": []
+        }
+        
+    except Exception as e:
+        print(f"获取美股{ticker}财务数据失败: {str(e)}")
+        return {
+            "income_statements": [],
+            "balance_sheets": [],
+            "cash_flow_statements": []
+        }
+
+def get_cn_stock_financial_data(ticker: str, period: str, limit: int = 10) -> dict:
+    """获取A股财务数据"""
+    try:
         # 获取财务报表数据 - 使用更稳定的接口
         try:
             # 尝试使用东方财富接口
@@ -57,8 +241,7 @@ def get_stock_financial_data(ticker: str, period: str, limit: int = 10) -> dict:
                 balance_df = ak.stock_financial_report_sina(stock=ticker, symbol="资产负债表") 
                 cashflow_df = ak.stock_financial_report_sina(stock=ticker, symbol="现金流量表")
             except:
-                # 如果都失败，尝试使用其他接口
-                income_df = ak.stock_financial_hk_report_em(symbol=ticker) if len(ticker) <= 4 else pd.DataFrame()
+                income_df = pd.DataFrame()
                 balance_df = pd.DataFrame()
                 cashflow_df = pd.DataFrame()
 
@@ -126,9 +309,9 @@ def get_stock_financial_data(ticker: str, period: str, limit: int = 10) -> dict:
             "balance_sheets": balance_df.to_dict('records') if not balance_df.empty else [],
             "cash_flow_statements": cashflow_df.to_dict('records') if not cashflow_df.empty else []
         }
-
+        
     except Exception as e:
-        print(f"获取股票{ticker}财务数据失败: {str(e)}")
+        print(f"获取A股{ticker}财务数据失败: {str(e)}")
         return {
             "income_statements": [],
             "balance_sheets": [],

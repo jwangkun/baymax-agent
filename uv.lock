@@ -270,6 +270,11 @@ dependencies = [
     { name = "requests" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "baymax" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "akshare", specifier = ">=1.12.0" },
@@ -286,6 +291,9 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "requests", specifier = ">=2.32.5" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "baymax", editable = "." }]
 
 [[package]]
 name = "beautifulsoup4"
