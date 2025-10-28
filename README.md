@@ -12,7 +12,7 @@
 
 **智能AI驱动的金融研究助手，专为股票分析和投资研究而设计**
 
-[功能特性](#功能特性) • [快速开始](#快速开始) • [使用指南](#使用指南) • [API文档](#api文档) • [贡献指南](#贡献指南)
+[功能特性](#功能特性) • [快速开始](#快速开始) • [使用指南](#使用指南) • [MCP集成](#mcp集成) • [API文档](#api文档) • [贡献指南](#贡献指南)
 
 </div>
 
@@ -24,6 +24,8 @@
 - [快速开始](#快速开始)
 - [使用指南](#使用指南)
 - [配置说明](#配置说明)
+- [📊 数据源与限制说明](#数据源与限制说明)
+- [🔌 MCP集成](#mcp集成)
 - [API文档](#api文档)
 - [开发指南](#开发指南)
 - [贡献指南](#贡献指南)
@@ -39,14 +41,14 @@ BayMax Agent是一个基于大语言模型(LLM)的智能金融研究助手，专
 - **智能洞察生成**：基于LLM技术提供深度分析和投资建议
 - **多市场覆盖**：同时支持A股和美股市场分析
 - **灵活可扩展**：模块化设计，易于集成新数据源和分析工具
-- **多模型兼容**：支持多种主流LLM提供商，适应不同的需求和预算
+- **DeepSeek模型集成**：基于DeepSeek AI模型，提供高质量的金融分析能力
 
 无论您是个人投资者、金融分析师还是研究人员，BayMax Agent都能成为您投资决策过程中的得力助手。
 
 ## ✨ 功能特性
 
 - 🔍 **智能股票分析**: 基于先进LLM技术的深度市场数据分析和投资研究，提供专业级分析报告
-- 🤖 **多模型支持**: 兼容OpenAI (GPT-4, GPT-3.5), Anthropic Claude (Claude-3), Google Gemini等多种主流LLM
+- 🤖 **DeepSeek模型支持**: 基于DeepSeek模型提供AI分析能力，支持OpenAI兼容接口
 - 📊 **全面财务数据**: 获取收入表、资产负债表、现金流量表等核心财务报表，并支持多年度对比分析
 - 🌍 **多市场支持**: 无缝支持A股和美股市场数据，提供统一的分析体验
 - 📋 **智能任务规划**: 自动分解复杂查询，规划执行步骤，解决涉及多数据源的复杂分析任务
@@ -262,33 +264,25 @@ baymax --query "分析AAPL的财务状况"
 
 | 变量名 | 描述 | 必需 | 示例 |
 |--------|------|------|------|
-| `OPENAI_API_KEY` | OpenAI API密钥 | 否 | `sk-...` |
-| `ANTHROPIC_API_KEY` | Anthropic API密钥 | 否 | `sk-ant-...` |
-| `GOOGLE_API_KEY` | Google AI API密钥 | 否 | `AI...` |
-| `OPENAI_BASE_URL` | 自定义OpenAI API端点 | 否 | `https://api.openai.com/v1` |
-| `BAYMAX_DEFAULT_MODEL` | 默认使用的模型 | 否 | `openai:gpt-4` |
+| `DEEPSEEK_API_KEY` | DeepSeek API密钥 | 是 | `sk-...` |
+| `DEEPSEEK_BASE_URL` | DeepSeek API端点 | 否 | `https://api.deepseek.com` |
+| `DEEPSEEK_MODEL` | DeepSeek模型名称 | 否 | `deepseek-chat` |
+| `BAYMAX_DEFAULT_MODEL` | 默认使用的模型 | 否 | `deepseek` |
 | `BAYMAX_TEMPERATURE` | 生成内容的随机性程度(0-1) | 否 | `0.2` |
 | `BAYMAX_MAX_TOKENS` | 最大生成令牌数 | 否 | `4096` |
 | `BAYMAX_LOG_LEVEL` | 日志级别(DEBUG/INFO/WARNING/ERROR) | 否 | `INFO` |
 
-**注意**：至少需要配置一个LLM提供商的API密钥
+**注意**：当前版本仅支持DeepSeek模型，需要配置DeepSeek API密钥
 
 ### 模型配置
 
-BayMax Agent支持以下模型提供商和模型：
+当前版本BayMax Agent仅支持DeepSeek模型：
 
-- **OpenAI**:
-  - gpt-4o, gpt-4, gpt-4-turbo
-  - gpt-3.5-turbo, gpt-3.5-turbo-16k
+- **DeepSeek**:
+  - deepseek-chat (默认)
+  - 支持OpenAI兼容接口
 
-- **Anthropic Claude**:
-  - claude-3-opus-20240229
-  - claude-3-sonnet-20240229
-  - claude-3-haiku-20240307
-
-- **Google Gemini**:
-  - gemini-pro
-  - gemini-1.5-pro
+DeepSeek模型提供高质量的AI分析能力，适用于金融分析场景。
 
 ### 自定义配置文件
 
@@ -327,6 +321,295 @@ BayMax Agent支持以下命令行参数：
 --version               显示版本信息
 ```
 ```
+
+## 📊 数据源与限制说明
+
+### 数据来源
+BayMax Agent 使用免费数据源进行股票分析，主要依赖以下服务：
+
+- **AkShare**: 免费开源的金融数据接口库
+  - 提供A股、美股、港股等市场数据
+  - 数据源包括新浪财经、腾讯财经、东方财富等
+  - 无需API密钥即可访问
+  - 数据更新频率和稳定性取决于源网站
+
+### 重要限制 ⚠️
+
+1. **数据质量**:
+   - 使用免费数据源，数据准确性依赖于第三方网站
+   - 可能存在延迟、缺失或错误的情况
+   - 建议与官方数据源交叉验证重要决策
+
+2. **网络依赖性**:
+   - 需要稳定的网络连接访问数据源
+   - 部分数据源可能有访问频率限制
+   - 网络问题可能导致数据获取失败
+
+3. **实时性**:
+   - 非专业实时行情数据
+   - 股价数据可能有15-20分钟延迟
+   - 财务数据按官方发布周期更新
+
+4. **覆盖范围**:
+   - 主要覆盖A股和美股市场
+   - 港股市场支持有限
+   - 其他国际市场暂不支持
+
+5. **AI模型限制**:
+   - 当前仅支持DeepSeek模型
+   - 分析结果基于AI模型，仅供参考
+   - 不构成投资建议
+
+## 🔌 MCP (模型上下文协议) 集成
+
+BayMax Agent 现已支持模型上下文协议 (MCP)，允许外部应用程序和 AI 助手通过标准化的 HTTP 接口访问其财务分析功能。
+
+### 🚀 启动 MCP 服务器
+
+#### 前置要求
+确保已安装必要依赖：
+```bash
+pip install fastmcp
+```
+
+#### 启动步骤
+1. **配置环境变量**（如果尚未配置）：
+```bash
+export DEEPSEEK_API_KEY=your-api-key
+```
+
+2. **启动 MCP 服务器**：
+```bash
+python mcp_server.py
+```
+
+3. **验证启动成功**：
+服务器启动后，您应该看到：
+```
+🚀 Starting BayMax Agent MCP Server in HTTP mode...
+🌐 HTTP endpoint: http://0.0.0.0:8000
+📦 Transport: HTTP
+🔗 Server URL: http://0.0.0.0:8000/mcp
+```
+
+#### 服务器特性
+- **传输方式**: HTTP 与服务器发送事件 (SSE)
+- **端点**: `http://localhost:8000/mcp`
+- **协议**: 模型上下文协议 (MCP)
+- **并发**: 支持多客户端同时连接
+
+#### 测试连接
+启动后可通过以下方式测试：
+```bash
+# 测试服务器状态
+curl -N -H "Accept: text/event-stream" http://localhost:8000/mcp
+
+# 如果返回 SSE 格式数据，说明服务器正常运行
+```
+
+### 🛠️ 可用的 MCP 工具
+
+MCP 服务器公开了 6 个财务分析工具：
+
+#### 1. **get_stock_price**
+获取当前股票价格和市值信息
+```json
+{
+  "tool": "get_stock_price",
+  "arguments": {
+    "ticker": "AAPL"
+  }
+}
+```
+
+#### 2. **get_price_history**
+检索历史价格数据和技术分析
+```json
+{
+  "tool": "get_price_history",
+  "arguments": {
+    "ticker": "AAPL",
+    "period": "daily",
+    "days_back": 30
+  }
+}
+```
+
+#### 3. **analyze_stock**
+AI 驱动的综合股票分析和买入/卖出建议
+```json
+{
+  "tool": "analyze_stock",
+  "arguments": {
+    "ticker": "AAPL",
+    "analysis_type": "comprehensive",
+    "include_recommendation": true
+  }
+}
+```
+
+#### 4. **get_technical_analysis**
+技术指标和分析（RSI、移动平均线、支撑/阻力）
+```json
+{
+  "tool": "get_technical_analysis",
+  "arguments": {
+    "ticker": "AAPL",
+    "period": "daily",
+    "days_back": 30
+  }
+}
+```
+
+#### 5. **get_weekly_summary**
+每周业绩总结和波动率指标
+```json
+{
+  "tool": "get_weekly_summary",
+  "arguments": {
+    "ticker": "AAPL"
+  }
+}
+```
+
+#### 6. **get_financial_statements**
+财务报表（损益表、资产负债表、现金流量表）
+```json
+{
+  "tool": "get_financial_statements",
+  "arguments": {
+    "ticker": "AAPL",
+    "statement_type": "income",
+    "period": "quarterly",
+    "limit": 4
+  }
+}
+```
+
+### 🔗 集成示例
+
+#### 与 Claude Desktop 一起使用
+
+添加到您的 `claude_desktop_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "baymax-agent": {
+      "url": "http://localhost:8000/mcp",
+      "transport": "http"
+    }
+  }
+}
+```
+
+#### 与 Cursor 一起使用
+
+添加到您的 Cursor MCP 设置：
+
+```json
+{
+  "name": "BayMax Agent",
+  "url": "http://localhost:8000/mcp",
+  "type": "http"
+}
+```
+
+#### 直接使用 HTTP API
+
+您还可以使用 HTTP 请求直接与 MCP 服务器交互：
+
+```bash
+# 获取服务器信息
+curl -N -H "Accept: text/event-stream" http://localhost:8000/mcp
+
+# 调用工具（需要 MCP 协议格式）
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "1",
+    "method": "tools/call",
+    "params": {
+      "name": "get_stock_price",
+      "arguments": {
+        "ticker": "AAPL"
+      }
+    }
+  }'
+```
+
+### 📋 支持的市场
+
+- **A股**: 中国股票（例如：600519、000001）
+- **美股**: 美国股票（例如：AAPL、MSFT、GOOGL）
+- **港股**: 香港股票（例如：1211.HK）
+
+### ⚠️ 重要说明
+
+- **网络要求**: MCP 服务器需要互联网访问权限以获取实时财务数据
+- **速率限制**: 频繁请求时注意 API 速率限制
+- **数据准确性**: 财务数据来自多个提供商，具有回退机制
+- **错误处理**: 服务器包含针对网络问题的综合错误处理
+
+### 🔧 配置与故障排除
+
+#### 环境配置
+MCP 服务器支持环境变量进行配置：
+
+```bash
+# 可选：设置日志级别
+export BAYMAX_LOG_LEVEL=INFO
+
+# 可选：设置 AI 分析的默认模型
+export BAYMAX_DEFAULT_MODEL=deepseek
+
+# 可选：设置 API 超时时间
+export BAYMAX_REQUEST_TIMEOUT=30
+```
+
+#### 常见问题与解决方案
+
+**问题1: 服务器启动失败**
+```bash
+# 错误信息：ModuleNotFoundError: No module named 'fastmcp'
+# 解决方案：
+pip install fastmcp
+```
+
+**问题2: API调用失败**
+```bash
+# 错误信息：DeepSeek API error
+# 解决方案：
+# 1. 检查API密钥是否正确
+# 2. 检查网络连接
+# 3. 查看API配额是否用完
+```
+
+**问题3: 数据获取失败**
+```bash
+# 错误信息：Network error: US price fetch failed
+# 解决方案：
+# 1. 检查网络连接
+# 2. 等待网络恢复后重试
+# 3. 使用其他数据源
+```
+
+**问题4: MCP客户端连接失败**
+```bash
+# 错误信息：Connection refused
+# 解决方案：
+# 1. 确认服务器已启动
+# 2. 检查端口号是否正确 (8000)
+# 3. 检查防火墙设置
+```
+
+#### 性能优化建议
+
+1. **缓存使用**: 相同查询会缓存结果，减少API调用
+2. **批量查询**: 尽量批量获取数据，减少网络请求
+3. **错误重试**: 网络失败会自动重试，最多2次
+4. **超时设置**: 合理设置超时时间，避免长时间等待
 
 ## 📖 API文档
 
@@ -753,10 +1036,10 @@ git push origin feature/new-feature
 
 ### Q: 如何切换不同的LLM模型？
 
-A: 您可以通过以下三种方式切换不同的LLM模型：
-1. 设置环境变量：`export BAYMAX_DEFAULT_MODEL=anthropic:claude-3-sonnet-20240229`
-2. 使用命令行参数：`baymax --model google:gemini-pro`
-3. 在配置文件中指定：在`config.json`中设置`default_model`参数
+A: 当前版本仅支持DeepSeek模型。您可以通过以下方式配置：
+1. 设置环境变量：`export DEEPSEEK_API_KEY=your-api-key`
+2. 使用命令行参数：`baymax --model deepseek:deepseek-chat`
+3. 在配置文件中指定：在`config.json`中设置`default_model`为`deepseek`
 
 ### Q: 支持哪些股票市场？
 
@@ -768,12 +1051,10 @@ A: 目前支持A股（中国股市）和美股（美国股市）的股票数据�
 
 ### Q: 如何获取API密钥？
 
-A: 您需要从各个LLM提供商处获取API密钥：
-- OpenAI API密钥: 访问 [OpenAI Platform](https://platform.openai.com/api-keys)
-- Anthropic API密钥: 访问 [Anthropic Console](https://console.anthropic.com/)
-- Google AI API密钥: 访问 [Google AI Studio](https://makersuite.google.com/app/apikey)
+A: 当前版本需要DeepSeek API密钥：
+- DeepSeek API密钥: 访问 [DeepSeek Platform](https://platform.deepseek.com/)
 
-注意：这些服务可能需要付费使用，请参考各平台的定价政策。
+注意：DeepSeek服务可能需要付费使用，请参考平台的定价政策。当前版本仅支持DeepSeek模型。
 
 ### Q: 数据更新频率如何？
 
@@ -789,8 +1070,8 @@ A: 不，BayMax Agent提供的分析仅供参考，不构成投资建议。投�
 
 ### Q: 如何提高分析的准确性？
 
-A: 
-1. 使用更先进的模型（如GPT-4、Claude-3-opus）可以获得更深入的分析
+A:
+1. DeepSeek模型已针对中文和金融场景优化，提供高质量分析
 2. 提供更具体的查询，明确指定您关心的分析维度
 3. 对于复杂分析，将其分解为多个步骤进行查询
 4. 定期更新您的API密钥和依赖库以获取最新功能

@@ -12,7 +12,7 @@
 
 **An intelligent AI-driven financial research assistant designed for stock analysis and investment research**
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Usage Guide](#-usage-guide) • [API Documentation](#-api-documentation) • [Contributing](#-contributing)
+[Features](#-features) • [Quick Start](#-quick-start) • [Usage Guide](#-usage-guide) • [MCP Integration](#-mcp-integration) • [API Documentation](#-api-documentation) • [Contributing](#-contributing)
 
 </div>
 
@@ -23,7 +23,9 @@
 - [🚀 Installation](#-installation)
 - [🏃‍♂️ Quick Start](#-quick-start)
 - [📚 Usage Guide](#-usage-guide)
-- [⚙️ Configuration](#-configuration)
+- [⚙️ Configuration](#️configuration)
+- [📊 Data Sources & Limitations](#-data-sources--limitations)
+- [🔌 MCP Integration](#-mcp-integration)
 - [📖 API Documentation](#-api-documentation)
 - [🛠️ Development Guide](#-development-guide)
 - [🤝 Contributing](#-contributing)
@@ -39,14 +41,14 @@ Key Advantages:
 - **Intelligent Insight Generation**: Provides in-depth analysis and investment recommendations based on LLM technology
 - **Multi-Market Coverage**: Simultaneously supports A-share and US stock market analysis
 - **Flexible and Extensible**: Modular design, easy to integrate new data sources and analysis tools
-- **Multi-Model Compatible**: Supports multiple mainstream LLM providers to adapt to different needs and budgets
+- **DeepSeek Model Integration**: Based on DeepSeek AI model, providing high-quality financial analysis capabilities
 
 Whether you are an individual investor, financial analyst, or researcher, BayMax Agent can be a powerful assistant in your investment decision-making process.
 
 ## ✨ Features
 
 - 🔍 **Intelligent Stock Analysis**: Advanced LLM-based deep market data analysis and investment research, providing professional-grade analysis reports
-- 🤖 **Multi-Model Support**: Compatible with OpenAI (GPT-4, GPT-3.5), Anthropic Claude (Claude-3), Google Gemini, and other mainstream LLMs
+- 🤖 **DeepSeek Model Support**: Based on DeepSeek model providing AI analysis capabilities with OpenAI-compatible interface
 - 📊 **Comprehensive Financial Data**: Retrieves core financial statements including income statements, balance sheets, cash flow statements, with multi-year comparative analysis support
 - 🌍 **Multi-Market Support**: Seamlessly supports A-share and US stock market data, providing unified analysis experience
 - 📋 **Intelligent Task Planning**: Automatically decomposes complex queries, plans execution steps, and solves complex analysis tasks involving multiple data sources
@@ -240,17 +242,13 @@ baymax --debug
 Create a `.env` file in your project root directory:
 
 ```bash
-# LLM API Keys (configure at least one)
-OPENAI_API_KEY=your-openai-api-key-here
-ANTHROPIC_API_KEY=your-anthropic-api-key-here
-GOOGLE_API_KEY=your-google-api-key-here
-
-# Optional: Custom API endpoints
-OPENAI_BASE_URL=https://api.openai.com/v1
-ANTHROPIC_BASE_URL=https://api.anthropic.com
+# DeepSeek API Key (required)
+DEEPSEEK_API_KEY=your-deepseek-api-key-here
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
 
 # Optional: Model configuration
-DEFAULT_MODEL=gpt-4
+DEFAULT_MODEL=deepseek
 MAX_TOKENS=4000
 TEMPERATURE=0.7
 ```
@@ -277,6 +275,295 @@ You can also create a `config.json` file for advanced configuration:
   }
 }
 ```
+
+## 📊 Data Sources & Limitations
+
+### Data Sources
+BayMax Agent uses free data sources for stock analysis, primarily relying on:
+
+- **AkShare**: Free open-source financial data interface library
+  - Provides A-shares, US stocks, Hong Kong stocks market data
+  - Data sources include Sina Finance, Tencent Finance, East Money
+  - No API key required for access
+  - Data update frequency and stability depend on source websites
+
+### Important Limitations ⚠️
+
+1. **Data Quality**:
+   - Uses free data sources, data accuracy depends on third-party websites
+   - May have delays, missing data, or errors
+   - Recommend cross-validation with official data sources for important decisions
+
+2. **Network Dependency**:
+   - Requires stable network connection to access data sources
+   - Some data sources may have access frequency limits
+   - Network issues may cause data retrieval failures
+
+3. **Real-time Capability**:
+   - Not professional real-time market data
+   - Stock price data may have 15-20 minute delays
+   - Financial data updated according to official release cycles
+
+4. **Coverage Scope**:
+   - Mainly covers A-shares and US stock markets
+   - Hong Kong stock market support is limited
+   - Other international markets not currently supported
+
+5. **AI Model Limitations**:
+   - Currently only supports DeepSeek model
+   - Analysis results are AI model-based and for reference only
+   - Does not constitute investment advice
+
+## 🔌 MCP (Model Context Protocol) Integration
+
+BayMax Agent now supports the Model Context Protocol (MCP), allowing external applications and AI assistants to access its financial analysis capabilities through a standardized HTTP interface.
+
+### 🚀 Starting the MCP Server
+
+#### Prerequisites
+Ensure required dependencies are installed:
+```bash
+pip install fastmcp
+```
+
+#### Startup Steps
+1. **Configure environment variables** (if not already configured):
+```bash
+export DEEPSEEK_API_KEY=your-api-key
+```
+
+2. **Start the MCP server**:
+```bash
+python mcp_server.py
+```
+
+3. **Verify successful startup**:
+After starting, you should see:
+```
+🚀 Starting BayMax Agent MCP Server in HTTP mode...
+🌐 HTTP endpoint: http://0.0.0.0:8000
+📦 Transport: HTTP
+🔗 Server URL: http://0.0.0.0:8000/mcp
+```
+
+#### Server Features
+- **Transport**: HTTP with Server-Sent Events (SSE)
+- **Endpoint**: `http://localhost:8000/mcp`
+- **Protocol**: Model Context Protocol (MCP)
+- **Concurrency**: Supports multiple simultaneous client connections
+
+#### Connection Testing
+After starting, you can test with:
+```bash
+# Test server status
+curl -N -H "Accept: text/event-stream" http://localhost:8000/mcp
+
+# If SSE format data is returned, server is running normally
+```
+
+### 🛠️ Available MCP Tools
+
+The MCP server exposes 6 financial analysis tools:
+
+#### 1. **get_stock_price**
+Get current stock price and market information
+```json
+{
+  "tool": "get_stock_price",
+  "arguments": {
+    "ticker": "AAPL"
+  }
+}
+```
+
+#### 2. **get_price_history**
+Retrieve historical price data with technical analysis
+```json
+{
+  "tool": "get_price_history",
+  "arguments": {
+    "ticker": "AAPL",
+    "period": "daily",
+    "days_back": 30
+  }
+}
+```
+
+#### 3. **analyze_stock**
+AI-powered comprehensive stock analysis with buy/sell recommendations
+```json
+{
+  "tool": "analyze_stock",
+  "arguments": {
+    "ticker": "AAPL",
+    "analysis_type": "comprehensive",
+    "include_recommendation": true
+  }
+}
+```
+
+#### 4. **get_technical_analysis**
+Technical indicators and analysis (RSI, moving averages, support/resistance)
+```json
+{
+  "tool": "get_technical_analysis",
+  "arguments": {
+    "ticker": "AAPL",
+    "period": "daily",
+    "days_back": 30
+  }
+}
+```
+
+#### 5. **get_weekly_summary**
+Weekly performance summary with volatility metrics
+```json
+{
+  "tool": "get_weekly_summary",
+  "arguments": {
+    "ticker": "AAPL"
+  }
+}
+```
+
+#### 6. **get_financial_statements**
+Financial statements (income, balance sheet, cash flow)
+```json
+{
+  "tool": "get_financial_statements",
+  "arguments": {
+    "ticker": "AAPL",
+    "statement_type": "income",
+    "period": "quarterly",
+    "limit": 4
+  }
+}
+```
+
+### 🔗 Integration Examples
+
+#### Using with Claude Desktop
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "baymax-agent": {
+      "url": "http://localhost:8000/mcp",
+      "transport": "http"
+    }
+  }
+}
+```
+
+#### Using with Cursor
+
+Add to your Cursor MCP settings:
+
+```json
+{
+  "name": "BayMax Agent",
+  "url": "http://localhost:8000/mcp",
+  "type": "http"
+}
+```
+
+#### Direct HTTP API Usage
+
+You can also interact with the MCP server directly using HTTP requests:
+
+```bash
+# Get server information
+curl -N -H "Accept: text/event-stream" http://localhost:8000/mcp
+
+# Call a tool (requires MCP protocol formatting)
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "1",
+    "method": "tools/call",
+    "params": {
+      "name": "get_stock_price",
+      "arguments": {
+        "ticker": "AAPL"
+      }
+    }
+  }'
+```
+
+### 📋 Supported Markets
+
+- **A-shares**: Chinese stocks (e.g., 600519, 000001)
+- **US Stocks**: American stocks (e.g., AAPL, MSFT, GOOGL)
+- **Hong Kong Stocks**: HK stocks (e.g., 1211.HK)
+
+### ⚠️ Important Notes
+
+- **Network Requirements**: The MCP server requires internet access for real-time financial data
+- **Rate Limiting**: Be mindful of API rate limits when making frequent requests
+- **Data Accuracy**: Financial data is sourced from multiple providers with fallback mechanisms
+- **Error Handling**: The server includes comprehensive error handling for network issues
+
+### 🔧 Configuration & Troubleshooting
+
+#### Environment Configuration
+The MCP server supports environment variables for configuration:
+
+```bash
+# Optional: Set log level
+export BAYMAX_LOG_LEVEL=INFO
+
+# Optional: Set default model for AI analysis
+export BAYMAX_DEFAULT_MODEL=deepseek
+
+# Optional: Set API timeout
+export BAYMAX_REQUEST_TIMEOUT=30
+```
+
+#### Common Issues & Solutions
+
+**Issue 1: Server fails to start**
+```bash
+# Error: ModuleNotFoundError: No module named 'fastmcp'
+# Solution:
+pip install fastmcp
+```
+
+**Issue 2: API call failures**
+```bash
+# Error: DeepSeek API error
+# Solutions:
+# 1. Check if API key is correct
+# 2. Check network connection
+# 3. Verify API quota is not exhausted
+```
+
+**Issue 3: Data retrieval failures**
+```bash
+# Error: Network error: US price fetch failed
+# Solutions:
+# 1. Check network connection
+# 2. Wait for network recovery and retry
+# 3. Try alternative data sources
+```
+
+**Issue 4: MCP client connection failures**
+```bash
+# Error: Connection refused
+# Solutions:
+# 1. Confirm server is running
+# 2. Check port number is correct (8000)
+# 3. Check firewall settings
+```
+
+#### Performance Optimization Tips
+
+1. **Caching**: Same queries are cached to reduce API calls
+2. **Batch queries**: Get data in batches to reduce network requests
+3. **Error retry**: Network failures automatically retry up to 2 times
+4. **Timeout settings**: Set reasonable timeout to avoid long waits
 
 ## 📖 API Documentation
 
@@ -495,7 +782,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 A: Currently supports A-shares (Chinese stocks) and US stocks. Hong Kong stocks have partial support with some network limitations.
 
 ### Q: Which LLM providers are supported?
-A: OpenAI (GPT-4, GPT-3.5), Anthropic Claude, Google Gemini, and any OpenAI-compatible API.
+A: Currently, only DeepSeek models are supported. The system uses DeepSeek's API with OpenAI-compatible interface for high-quality financial analysis.
 
 ### Q: Is real-time data guaranteed?
 A: The system tries multiple data sources with fallback mechanisms, but network issues may affect real-time data availability. Historical data is generally more reliable.

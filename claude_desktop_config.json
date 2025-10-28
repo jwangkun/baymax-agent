@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "baymax-agent": {
+      "command": "python",
+      "args": ["/Users/jwangkun/ai/baymax-agent/mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "/Users/jwangkun/ai/baymax-agent/src"
+      }
+    }
+  }
+}
